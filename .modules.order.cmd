@@ -1,0 +1,1 @@
+cmd_/home/hdski/projects/LKM-Fork-Detection-With-Kprobes/modules.order := {   echo /home/hdski/projects/LKM-Fork-Detection-With-Kprobes/my_module.ko; :; } > /home/hdski/projects/LKM-Fork-Detection-With-Kprobes/modules.order

@@ -3,7 +3,7 @@
 #include <linux/kernel.h>
 #include <linux/proc_fs.h>
 #include <linux/uaccess.h>
-#include <linux/kprobe.h>
+#include <linux/kprobes.h>
 #include <linux/sched.h>
 
 MODULE_LICENSE("GPL");
@@ -25,7 +25,7 @@ static int kprobe_pre_handler(struct kprobe* p, struct pt_regs* regs) {
 struct kprobe kp = {
 	.symbol_name = "_do_fork", // monitor the fork syscall
 	.pre_handler = kprobe_pre_handler, // set the pre-handler function
-}
+};
 
 // This function will be called when the /proc/my_proc file is read
 static ssize_t proc_read(struct file *file, char __user *usr_buf, size_t count, loff_t *ppos) {
@@ -81,6 +81,7 @@ static const struct proc_ops proc_ops = {
 
 // This function is called when the module is loaded
 static int __init my_module_init(void) {
+	int ret;
 	proc_create(PROC_NAME, 0666, NULL, &proc_ops);
 	printk(KERN_INFO "LKM: /proc/%s created\n", PROC_NAME);
 
@@ -96,7 +97,7 @@ static int __init my_module_init(void) {
 static void __exit my_module_exit(void) {
 	remove_proc_entry(PROC_NAME, NULL);
 	unregister_kprobe(&kp);
-	printk(KERN_INFO "LKM: /proc/%s removed and Kprobe unregistered\n", PROCFS_NAME);
+	printk(KERN_INFO "LKM: /proc/%s removed and Kprobe unregistered\n", PROC_NAME);
 }
 
 module_init(my_module_init);

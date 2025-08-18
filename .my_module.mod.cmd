@@ -1,0 +1,1 @@
+cmd_/home/hdski/projects/LKM-Fork-Detection-With-Kprobes/my_module.mod := printf '%s\n'   my_module.o | awk '!x[$$0]++ { print("/home/hdski/projects/LKM-Fork-Detection-With-Kprobes/"$$0) }' > /home/hdski/projects/LKM-Fork-Detection-With-Kprobes/my_module.mod
