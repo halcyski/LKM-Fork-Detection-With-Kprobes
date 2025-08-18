@@ -1,1 +1,0 @@
-cmd_/home/hdski/projects/LKM-Fork-Detection-With-Kprobes/Module.symvers :=  sed 's/ko$$/o/'  /home/hdski/projects/LKM-Fork-Detection-With-Kprobes/modules.order | scripts/mod/modpost -m -a -E   -o /home/hdski/projects/LKM-Fork-Detection-With-Kprobes/Module.symvers -e -i Module.symvers -T - 
