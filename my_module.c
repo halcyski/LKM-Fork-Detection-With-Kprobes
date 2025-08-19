@@ -5,6 +5,7 @@
 #include <linux/uaccess.h>
 #include <linux/kprobes.h>
 #include <linux/sched.h>
+#include <linux/sched/signal.h>
 
 MODULE_LICENSE("GPL");
 
@@ -16,15 +17,20 @@ static long PID = 0;
 static int kprobe_pre_handler(struct kprobe* p, struct pt_regs* regs) {
 
 	if (current->pid == PID) {
-		printk(KERN_INFO "LKM: Process %ld is being forking a new process\n", PID);
+		printk(KERN_INFO "LKM: Process %ld is forking a new process\n", PID);
 	}
 
 	return 0; // continue execution
 }
 
-struct kprobe kp = {
-	.symbol_name = "_do_fork", // monitor the fork syscall
+struct kprobe kp_fork = {
+	.symbol_name = "__x64_sys_fork", // monitor the fork syscall
 	.pre_handler = kprobe_pre_handler, // set the pre-handler function
+};
+
+struct kprobe kp_clone = {
+	.symbol_name = "__x64_sys_clone",
+	.pre_handler = kprobe_pre_handler,
 };
 
 // This function will be called when the /proc/my_proc file is read
@@ -51,7 +57,7 @@ static ssize_t proc_read(struct file *file, char __user *usr_buf, size_t count, 
 
 static ssize_t proc_write(struct file* file, const char __user* usr_buf, size_t count, loff_t* ppos) {
 	char buffer[32];
-	long pid = 0;
+	long long pid = 0;
 
 	// ensure we dont overflow kernel buffer
 	if (count > sizeof(buffer) - 1) {
@@ -63,7 +69,7 @@ static ssize_t proc_write(struct file* file, const char __user* usr_buf, size_t 
 	}
 	buffer[count] = '\0'; // null terminate the string
 
-	if (kstrtol(buffer, 10, &pid) == 0) {
+	if (kstrtoll(buffer, 10, &pid) == 0) {
 		PID = pid;
 		printk(KERN_INFO "LKM: Now monitoring PID %ld\n", PID);
 	}
@@ -85,19 +91,27 @@ static int __init my_module_init(void) {
 	proc_create(PROC_NAME, 0666, NULL, &proc_ops);
 	printk(KERN_INFO "LKM: /proc/%s created\n", PROC_NAME);
 
-	ret = register_kprobe(&kp);
+	ret = register_kprobe(&kp_fork);
 	if (ret < 0) {
 		printk(KERN_ERR "LKM: Failed to register kprobe: %d\n", ret);
 		return ret; // return error code
 	}
-	printk(KERN_INFO "LKM: Kprobe registered to %s\n", kp.symbol_name);
+	printk(KERN_INFO "LKM: Fork Kprobe registered to %s\n", kp_fork.symbol_name);
+
+	ret = register_kprobe(&kp_clone);
+	if (ret < 0) {
+		printk(KERN_ERR "LKM: Failed to register kprobe: %d\n", ret);
+		return ret;
+	}
+	printk(KERN_INFO "LKM: Clone Kprobe register to %s\n", kp_clone.symbol_name);
 	return 0; // yay
 }
 
 static void __exit my_module_exit(void) {
 	remove_proc_entry(PROC_NAME, NULL);
-	unregister_kprobe(&kp);
-	printk(KERN_INFO "LKM: /proc/%s removed and Kprobe unregistered\n", PROC_NAME);
+	unregister_kprobe(&kp_fork);
+	unregister_kprobe(&kp_clone);
+	printk(KERN_INFO "LKM: /proc/%s removed and Kprobes unregistered\n", PROC_NAME);
 }
 
 module_init(my_module_init);
