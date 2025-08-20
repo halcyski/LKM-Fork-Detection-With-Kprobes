@@ -19,7 +19,7 @@ static int kprobe_pre_handler(struct kprobe* p, struct pt_regs* regs) {
 	if (current->pid == PID) {
 		printk(KERN_INFO "LKM: Process %ld is forking a new process\n", PID);
 	}
-	printk(KERN_INFO "LKM: durr durr: %ld \n", PID);
+	printk(KERN_INFO "LKM: Probe triggered: %ld \n", PID);
 	return 0; // continue execution
 }
 
